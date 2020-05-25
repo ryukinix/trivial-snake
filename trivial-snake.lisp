@@ -13,6 +13,8 @@
 (defparameter *key-bag* nil)
 (defparameter *title* "Trivial Snake")
 (defparameter *red* (vec4 255 0 0 1))
+(defparameter *green* (vec4 0 255 0 1))
+(defparameter *cyan* (vec4 0 255 255 1))
 (defparameter *black* (vec4 0 0 0 1))
 (defparameter *snake-face* :space)
 (defparameter *snake-body* (list (vec2 100 200)
@@ -20,6 +22,7 @@
                                  (vec2 140 200)))
 (defparameter *snake-size* 20)
 (defparameter *snake-color* *black*)
+(defparameter *snake-head* *cyan*)
 (defparameter *frame-counter* 1)
 (defparameter *apple* (vec2 200 200))
 (defparameter *delay* 5)
@@ -47,6 +50,7 @@
   (gamekit:draw-text (format nil "snake-cells: ~a" (length *snake-body*))
                      (gamekit:vec2 10 (- *heigth* 20))))
 
+
 (defun add-button (button)
   (gamekit:bind-button button :pressed ;Add each cycle
                        (lambda ()
@@ -55,13 +59,6 @@
                        (lambda ()
                          (setf *key-bag* (delete button *key-bag*)))))
 
-(defmethod gamekit:post-initialize ((this trivial-snake))
-  ;; binding buttons actions to each event
-  (loop for key in '(:up :down :left :right :space)
-        do (add-button key))
-  ;; stop events
-  (loop :for key :in '(:escape :q)
-        :do (gamekit:bind-button key :released #'gamekit:stop)))
 
 (defun direction-vector (&optional (scale *snake-size*))
   (mult
@@ -84,13 +81,16 @@
          (add vec (vec2 0 *heigth*)))
         (t vec)))
 
+
 (defun update-head (head)
   (boundary-transport (add head (direction-vector))))
+
 
 (defun update-snake (snake)
   (let ((head (car snake))) ;; butlast function very useful!
     (cons (update-head head)
           (cons head (butlast snake 2)))))
+
 
 (defun invalid-move (new-key old-key)
   (loop for (k1 k2) in '((:up :down) (:left :right)
@@ -103,6 +103,7 @@
   (sqrt (+ (* x x)
            (* y y))))
 
+
 (defun vector-collision (u v &optional (range *snake-size*))
   (let* ((x1 (x u))
          (x2 (x v))
@@ -112,12 +113,13 @@
                             (- y2 y1))))
     (< d range)))
 
+
 (defun random-apple ()
   (let ((x (random (/ *width* *snake-size*)))
         (y (random (/ *heigth* *snake-size*))))
     (mult (vec2 x y) *snake-size*)))
 
-;; FIXME: buggy
+
 (defun sane-random-apple ()
   ;; without collision with snake-body
   (loop with apple = (random-apple)
@@ -125,6 +127,31 @@
                     thereis (vector-collision cell apple))
         do (setq apple (random-apple))
         finally (return apple)))
+
+
+(defun snake-draw ()
+  (gamekit:draw-rect (add (car *snake-body*) (vec2 -2 -2))
+                     (+ 4 *snake-size*) (+ 4 *snake-size*)
+                     :fill-paint *snake-head*)
+  (loop for cell in (cdr *snake-body*)
+        do (gamekit:draw-rect
+            cell
+            *snake-size* *snake-size*
+            :fill-paint *snake-color*)))
+
+
+(defun apple-draw ()
+  (gamekit:draw-rect *apple*
+                     *snake-size* *snake-size*
+                     :fill-paint *red*))
+
+
+(defun game-over-draw ()
+  (gamekit:draw-text "GAME OVER!"
+                     (vec2 (/ *width* 2) (/ *heigth* 2)))
+  (gamekit:draw-text "PRESS SPACE TO RESTART."
+                     (vec2 (/ *width* 2) (- (/ *heigth* 2) 30))))
+
 
 (defmethod gamekit:act ((this trivial-snake))
   ;; update *snake-face* by keyboards events
@@ -159,23 +186,15 @@
 
   (incf *frame-counter*))
 
-(defun snake-draw ()
-  (loop for cell in *snake-body*
-        do (gamekit:draw-rect
-            cell
-            *snake-size* *snake-size*
-            :fill-paint *snake-color*)))
 
-(defun apple-draw ()
-  (gamekit:draw-rect *apple*
-                     *snake-size* *snake-size*
-                     :fill-paint *red*))
+(defmethod gamekit:post-initialize ((this trivial-snake))
+  ;; binding buttons actions to each event
+  (loop for key in '(:up :down :left :right :space)
+        do (add-button key))
+  ;; stop events
+  (loop :for key :in '(:escape :q)
+        :do (gamekit:bind-button key :released #'gamekit:stop)))
 
-(defun game-over-draw ()
-  (gamekit:draw-text "GAME OVER!"
-                     (vec2 (/ *width* 2) (/ *heigth* 2)))
-  (gamekit:draw-text "PRESS SPACE TO RESTART."
-                     (vec2 (/ *width* 2) (- (/ *heigth* 2) 30))))
 
 (defmethod gamekit:draw ((this trivial-snake))
   (debug-draw)
@@ -184,8 +203,10 @@
   (when *game-over*
     (game-over-draw)))
 
+
 (defun main ()
   (gamekit:start 'trivial-snake))
+
 
 (eval-when (:load-toplevel :execute)
   (main))
