@@ -17,9 +17,9 @@
 (defparameter *cyan* (vec4 0 255 255 1))
 (defparameter *black* (vec4 0 0 0 1))
 (defparameter *snake-face* :space)
-(defparameter *snake-body* (list (vec2 100 200)
+(defparameter *snake-body* (list (vec2 140 200)
                                  (vec2 120 200)
-                                 (vec2 140 200)))
+                                 (vec2 100 200)))
 (defparameter *snake-size* 20)
 (defparameter *snake-color* *black*)
 (defparameter *snake-head* *cyan*)
@@ -35,12 +35,6 @@
   (:viewport-height *heigth*)
   (:viewport-title *title*))
 
-(defun restart-game ()
-  (defparameter *snake-body* (list (vec2 100 200)
-                                   (vec2 120 200)
-                                   (vec2 140 200)))
-  (defparameter *apple* (sane-random-apple))
-  (defparameter *snake-face* :space))
 
 (defun debug-draw ()
   (gamekit:draw-text (format nil "key pressed: ~a" *key-bag*)
@@ -130,14 +124,16 @@
 
 
 (defun snake-draw ()
-  (gamekit:draw-rect (add (car *snake-body*) (vec2 -2 -2))
-                     (+ 4 *snake-size*) (+ 4 *snake-size*)
-                     :fill-paint *snake-head*)
+  ;; draw tail
   (loop for cell in (cdr *snake-body*)
         do (gamekit:draw-rect
             cell
             *snake-size* *snake-size*
-            :fill-paint *snake-color*)))
+            :fill-paint *snake-color*))
+  ;; draw head
+  (gamekit:draw-rect (add (car *snake-body*) (vec2 -2 -2))
+                     (+ 4 *snake-size*) (+ 4 *snake-size*)
+                     :fill-paint *snake-head*))
 
 
 (defun apple-draw ()
@@ -151,6 +147,14 @@
                      (vec2 (/ *width* 2) (/ *heigth* 2)))
   (gamekit:draw-text "PRESS SPACE TO RESTART."
                      (vec2 (/ *width* 2) (- (/ *heigth* 2) 30))))
+
+
+(defun restart-game ()
+  (defparameter *snake-body* (list (vec2 100 200)
+                                   (vec2 120 200)
+                                   (vec2 140 200)))
+  (defparameter *apple* (sane-random-apple))
+  (defparameter *snake-face* :space))
 
 
 (defmethod gamekit:act ((this trivial-snake))
