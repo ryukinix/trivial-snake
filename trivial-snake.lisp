@@ -159,7 +159,8 @@
 
 (defmethod gamekit:act ((this trivial-snake))
   ;; update *snake-face* by keyboards events
-  (when (not *game-over*)
+  (when (and (not *game-over*)
+             (= (mod *frame-counter* *delay*) 0))
     (let ((new-key (car *key-bag*)))
       (when new-key
         (unless (invalid-move new-key *snake-face*)
@@ -167,8 +168,7 @@
 
     ;; update *snake-body*
     (unless (eq *snake-face* :space)
-      (when (= (mod *frame-counter* *delay*) 0)
-        (setf *snake-body* (update-snake *snake-body*))))
+      (setf *snake-body* (update-snake *snake-body*)))
 
     ;; check collision with current apple
     ;; if collide: eat and generate new apple
